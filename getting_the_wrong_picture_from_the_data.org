@@ -1,0 +1,75 @@
+
+
+- to represent the data we will plot feet size on the x coordinate and
+  number of mistakes on the y coordinate.
+- since there are multiple values for each feet size, we will choose
+  to plot the mean of those values.
+- this will allow to grasp if there is a relation between a change in
+  feet size and the numbers of mistke students make
+
+#+begin_src R :results output :session *R* :exports both
+  df = read.csv("data.csv", header = T, sep=",")
+  str(df)
+#+end_src
+
+#+RESULTS:
+: 
+: 'data.frame':	68 obs. of  2 variables:
+:  $ feet.size         : num  17.5 17.5 17.5 17.5 18 18 18 18 18.5 18.5 ...
+:  $ number.of.mistakes: int  15 18 19 20 16 17 18 19 14 16 ...
+
+
+#+begin_src R :results output :session *R* :exports both
+g = aggregate(x = df$number.of.mistakes, by = list(df$feet.size), FUN = mean) 
+str(g)
+#+end_src
+
+
+#+RESULTS:
+: 
+: 'data.frame':	21 obs. of  2 variables:
+:  $ Group.1: num  17.5 18 18.5 19 20 20.5 21 22 23 23.5 ...
+:  $ x      : num  18 17.5 15.7 15.5 14 ...
+
+
+#+begin_src R :results output graphics file :file figure.png :exports both :width 600 :height 400 :session *R*
+plot(g, type="l", xlab="Taille des pieds", ylab="Nombre moyen d'erreurs")
+#+end_src
+
+#+RESULTS:
+[[file:figure.png]]
+
+summary of the variables
+
+#+begin_src R :results output :session *R* :exports both
+ summary(df)
+ summary(g)
+ cov(df$feet.size, df$number.of.mistakes)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+   feet.size     number.of.mistakes
+ Min.   :17.50   Min.   : 0.000    
+ 1st Qu.:20.50   1st Qu.: 4.000    
+ Median :24.00   Median : 8.000    
+ Mean   :23.42   Mean   : 8.824    
+ 3rd Qu.:26.50   3rd Qu.:13.250    
+ Max.   :29.00   Max.   :20.000
+
+    Group.1            x         
+ Min.   :17.50   Min.   : 1.000  
+ 1st Qu.:20.50   1st Qu.: 4.000  
+ Median :24.00   Median : 7.750  
+ Mean   :23.55   Mean   : 8.611  
+ 3rd Qu.:26.50   3rd Qu.:14.000  
+ Max.   :29.00   Max.   :18.000
+
+[1] -18.80553
+#+end_example
+
+On observe une grande correlation négative entre la taille du pieds et
+le nombre d'erreurs
+
+cela est certainement dû au fait que les élèves avec des plus grands
+pieds sont plus agés donc ont fait plus de cours de français.
