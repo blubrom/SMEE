@@ -1,4 +1,5 @@
 
+* Feet-size
 
 - to represent the data we will plot feet size on the x coordinate and
   number of mistakes on the y coordinate.
@@ -68,8 +69,78 @@ summary of the variables
 [1] -18.80553
 #+end_example
 
-On observe une grande correlation négative entre la taille du pieds et
+On observe une grande correlation négative (-18.80553 de covariance) entre la taille du pieds et
 le nombre d'erreurs
 
 cela est certainement dû au fait que les élèves avec des plus grands
 pieds sont plus agés donc ont fait plus de cours de français.
+
+* Kindergarden
+
+les notes sont comprises entre 0 et 9, on aura probablement un axe des
+ordonées qui sera sur ces valeurs.
+
+#+begin_src R :results output :session *R* :exports both
+  group1 = read.csv("group1.csv", header = T, sep=",")
+  group2 = read.csv("group2.csv", header = T, sep=",")
+#+end_src
+
+On dispose de points de comparaisons entre les différentes années pour
+chaque élève. 
+Il va donc falloir aggréger les données pour les représenter.
+Une façon de voir la différence entre les deux méthode pourrait être de voir l'évolution de la moyenne pour la méthode 1 et
+la méthode 2.
+
+#+begin_src R :results output :session *R* :exports both
+  mean_group1 = colMeans(group1)
+  mean_group2 = colMeans(group2)
+  str(mean_group1)
+  str(mean_group2)
+#+end_src
+
+#+RESULTS:
+: 
+:  Named num [1:3] 1.2 4.06 7.12
+:  - attr(*, "names")= chr [1:3] "petite_section" "moyenne_section" "grande_section"
+: 
+:  Named num [1:3] 1.27 4.33 6.38
+:  - attr(*, "names")= chr [1:3] "petite_section" "moyenne_section" "grande_section"
+
+On peut voir que le groupe un a en moyenne de moins bons résultats que
+le groupe 2 en petite et moyenne section mais c'est l'inverse  en grande section.
+
+#+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+  barplot(mean_group1, ylab ="Score moyen des élèves", ylim= c(0,9))
+#+end_src
+
+#+RESULTS:
+[[file:/tmp/babel-BRCIKf/figureon7JVq.png]]
+#+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+  barplot(mean_group2, ylab="Score moyen des élèves", ylim= c(0,9))
+#+end_src
+
+#+RESULTS:
+[[file:/tmp/babel-BRCIKf/figurewt9WT4.png]]
+
+Cette visualisation est un début. Il y a probablement quelque chose de
+meilleur à faire, mais cela permet de donner une première idée.
+
+#+begin_src R :results output :session *R* :exports both
+  mean(rowSums(group1))
+  mean(rowSums(group2))
+#+end_src
+
+#+RESULTS:
+: [1] 12.37667
+: 
+: [1] 11.97167
+
+Si on prend une approche un peu différente, en prenant la moyenne des
+sommes de notes obtenues par chaque  élèves de chaque groupe, on tombe
+de nouveau sur un score un peu meilleur pour le premier groupe que
+pour le second.
+
+Ces deux approches ne sont toutefois pas très satisfaisantes, on ne
+garde qu'un seul point pour chaque année, cela suppose que les notes
+sont distribuées selon une loi normale alors que notre objectif serait
+aussi de vérifier cette hypothèse.
