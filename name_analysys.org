@@ -1,0 +1,271 @@
+
+---
+title: "French given names per year per department"
+author: "Lucas Mello Schnorr, Jean-Marc Vincent"
+date: "October, 2022"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+*  The problem context
+The aim of the activity is to develop a methodology to answer a specific question on a given dataset. 
+
+The dataset is the set of Firstname given in France on a large period of time. 
+[https://www.insee.fr/fr/statistiques/2540004](https://www.insee.fr/fr/statistiques/fichier/2540004/dpt2021_csv.zip), we choose this dataset because it is sufficiently large, you can't do the analysis by hand, the structure is simple
+
+
+You need to use the _tidyverse_ for this analysis. Unzip the file _dpt2020_txt.zip_ (to get the **dpt2020.csv**). Read in R with this code. Note that you might need to install the `readr` package with the appropriate command.
+
+**  Download Raw Data from the website
+
+   #+begin_src R :results output :session *R* :exports both
+   file = "data/dpt2021_csv.zip"
+   if(!file.exists(file)){
+       download.file("https://www.insee.fr/fr/statistiques/fichier/2540004/dpt2021_csv.zip",
+	destfile=file)
+    }
+    unzip(file)
+   #+end_src
+
+   #+RESULTS:
+   : 
+   : essai de l'URL 'https://www.insee.fr/fr/statistiques/fichier/2540004/dpt2021_csv.zip'
+   : downloaded 13.0 MB
+
+  Check if your file is the same as in the first analysis (reproducibility)
+
+  #+begin_src shell :results output :exports both
+  md5 data/dpt2021.csv
+  #+end_src
+expected :
+MD5 (dpt2021.csv) = f18a7d627883a0b248a0d59374f3bab7
+
+** Build the Dataframe from file
+
+   #+begin_src R :results output :session *R* :exports both
+   library(tidyverse)
+   FirstNames <- read_delim("data/dpt2021.csv",delim=";")
+   #+end_src
+
+   #+RESULTS:
+   : 
+   : [1mindexing[0m [34mdpt2021.csv[0m [-------------------------------------] [32m36.46GB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [============================--------] [32m296.18MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [==============================------] [32m300.43MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [===============================-----] [32m299.73MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [=================================---] [32m298.14MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [==================================--] [32m295.05MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [===================================-] [32m288.87MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [====================================] [32m285.48MB/s[0m, eta: [36m 0s[0m                                                                                                                   [1mRows: [22m[34m3784673[39m [1mColumns: [22m[34m5[39m
+   : [36m──[39m [1mColumn specification[22m [36m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+   : [1mDelimiter:[22m ";"
+   : [31mchr[39m (3): preusuel, annais, dpt
+   : [32mdbl[39m (2): sexe, nombre
+   : 
+   : [36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+   : [36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+
+All of these following questions may need a preliminary analysis of the data, feel free to present answers and justifications in your own order and structure your report as it should be for a scientific report.
+
+1. Choose a firstname and analyse its frequency along time. Compare several firstnames frequency
+2. Establish by gender the most given firstname by year. Analyse the evolution of the most frequent firstname.
+3. Optional : Which department has a larger variety of names along
+   time ? Is there some sort of geographical correlation with the
+   data?
+
+data cleaning:
+
+#+begin_src R :results output :session *R* :exports both
+   FirstNames %>%
+      # change the names of the columns to make them more self-explanatory
+      rename(prenom = preusuel) %>%
+      rename(annee = annais) %>%
+      filter(annee != "XXXX") %>%
+      # convert the annee col to numbers
+      mutate(annee = as.numeric(annee)) -> FirstNamesClean
+#+end_src
+
+#+RESULTS:
+
+* Choose a firstname and analyse its frequency along time.
+
+ aggregate the data a little bit
+ #+begin_src R :results output :session *R* :exports both
+      FirstNamesClean %>% group_by(prenom, annee) %>%
+      # create a new table where we put the sum of the nombre col for each (prenom, annee) pair
+      summarize(sexe, nombre = sum(nombre)) %>%
+      # keep only distinct entries 
+      distinct() -> NamesByYears
+
+   print(NamesByYears)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+
+  [1m[22m`summarise()` has grouped output by 'prenom', 'annee'. You can override using the `.groups` argument.
+
+  [38;5;246m# A tibble: 264,540 × 4[39m
+  [38;5;246m# Groups:   prenom, annee [256,083][39m
+     prenom         annee  sexe nombre
+     [3m[38;5;246m<chr>[39m[23m          [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<dbl>[39m[23m  [3m[38;5;246m<dbl>[39m[23m
+  [38;5;250m 1[39m _PRENOMS_RARES  [4m1[24m900     1   [4m2[24m934
+  [38;5;250m 2[39m _PRENOMS_RARES  [4m1[24m900     2   [4m2[24m934
+  [38;5;250m 3[39m _PRENOMS_RARES  [4m1[24m901     1   [4m3[24m094
+  [38;5;250m 4[39m _PRENOMS_RARES  [4m1[24m901     2   [4m3[24m094
+  [38;5;250m 5[39m _PRENOMS_RARES  [4m1[24m902     1   [4m3[24m056
+  [38;5;250m 6[39m _PRENOMS_RARES  [4m1[24m902     2   [4m3[24m056
+  [38;5;250m 7[39m _PRENOMS_RARES  [4m1[24m903     1   [4m3[24m024
+  [38;5;250m 8[39m _PRENOMS_RARES  [4m1[24m903     2   [4m3[24m024
+  [38;5;250m 9[39m _PRENOMS_RARES  [4m1[24m904     1   [4m3[24m223
+  [38;5;250m10[39m _PRENOMS_RARES  [4m1[24m904     2   [4m3[24m223
+  [38;5;246m# … with 264,530 more rows[39m
+  #+end_example
+
+ then compute the frequencies of each name 
+ #+begin_src R :results output :session *R* :exports both
+  NamesByYears %>%
+      group_by(annee) %>%
+      # add to each line, the total number of born child for the year
+      summarize(prenom, sexe, nombre, total=sum(nombre)) %>%
+      ungroup() %>%
+      # calculate the frequency and rename the cols accordingly
+      mutate(total = (nombre / total) * 100) %>%
+      rename(frequence = total) -> NameFrequencies
+
+  print(NameFrequencies)
+ #+end_src
+
+ #+RESULTS:
+ #+begin_example
+
+  [1m[22m`summarise()` has grouped output by 'annee'. You can override using the `.groups` argument.
+
+  [38;5;246m# A tibble: 264,540 × 5[39m
+     annee prenom          sexe nombre frequence
+     [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<chr>[39m[23m          [3m[38;5;246m<dbl>[39m[23m  [3m[38;5;246m<dbl>[39m[23m     [3m[38;5;246m<dbl>[39m[23m
+  [38;5;250m 1[39m  [4m1[24m900 _PRENOMS_RARES     1   [4m2[24m934  0.607   
+  [38;5;250m 2[39m  [4m1[24m900 _PRENOMS_RARES     2   [4m2[24m934  0.607   
+  [38;5;250m 3[39m  [4m1[24m900 ABEL               1    382  0.079[4m1[24m  
+  [38;5;250m 4[39m  [4m1[24m900 ABRAHAM            1      9  0.001[4m8[24m[4m6[24m 
+  [38;5;250m 5[39m  [4m1[24m900 ACHILLE            1    152  0.031[4m5[24m  
+  [38;5;250m 6[39m  [4m1[24m900 ACHILLES           1      4  0.000[4m8[24m[4m2[24m[4m8[24m
+  [38;5;250m 7[39m  [4m1[24m900 ADAM               1      9  0.001[4m8[24m[4m6[24m 
+  [38;5;250m 8[39m  [4m1[24m900 ADELAIDE           2    143  0.029[4m6[24m  
+  [38;5;250m 9[39m  [4m1[24m900 ADÈLE              2    626  0.130   
+  [38;5;250m10[39m  [4m1[24m900 ADELHEID           2      3  0.000[4m6[24m[4m2[24m[4m1[24m
+  [38;5;246m# … with 264,530 more rows[39m
+ #+end_example
+
+ #+begin_src R :results output :session *R* :exports both
+  get_frequency_plot = function(name){
+      NameFrequencies %>% 
+          filter(prenom == name) %>%
+          ggplot(aes(x = annee, y = frequence)) +
+          scale_x_continuous(name="Année", limits=c(1900,2025), breaks=seq(1900,2025,10))+
+          scale_y_continuous(name="Fréquence (%)") +
+ geom_point() + theme_bw();
+  }
+ #+end_src
+
+ #+RESULTS:
+
+** different name frequency plots
+
+  #+begin_src R :results output graphics file :file pictures/frequency_achille.png :exports both :width 600 :height 400 :session *R*
+get_frequency_plot("ACHILLE")
+  #+end_src
+
+  #+RESULTS:
+  [[file:pictures/frequency_achille.png]]
+
+  #+begin_src R :results output graphics file :file pictures/frequency_clement.png :exports both :width 600 :height 400 :session *R*
+  get_frequency_plot("CLÉMENT")
+  #+end_src
+
+  #+RESULTS:
+  [[file:pictures/frequency_clement.png]]
+  #+begin_src R :results output graphics file :file pictures/frequency_ludmila.png :exports both :width 600 :height 400 :session *R*
+  get_frequency_plot("LUDMILA")
+  #+end_src
+
+  #+RESULTS:
+  [[file:pictures/frequency_ludmila.png]]
+  #+begin_src R :results output graphics file :file pictures/frequency_hugo.png :exports both :width 600 :height 400 :session *R*
+  get_frequency_plot("HUGO")
+  #+end_src
+
+  #+RESULTS:
+  [[file:pictures/frequency_hugo.png]]
+  #+begin_src R :results output graphics file :file pictures/frequency_arthur.png :exports both :width 600 :height 400 :session *R*
+  get_frequency_plot("ARTHUR")
+  #+end_src
+
+  #+RESULTS:
+  [[file:pictures/frequency_arthur.png]]
+
+  #+begin_src R :results output graphics file :file pictures/frequency_emma.png :exports both :width 600 :height 400 :session *R*
+  get_frequency_plot("EMMA")
+  #+end_src
+
+  #+RESULTS:
+  [[file:pictures/frequency_emma.png]]
+  #+begin_src R :results output graphics file :file pictures/frequency_manon.png :exports both :width 600 :height 400 :session *R*
+  get_frequency_plot("MANON")
+  #+end_src
+
+  #+RESULTS:
+  [[file:pictures/frequency_manon.png]]
+  #+begin_src R :results output graphics file :file pictures/frequency_dylan.png :exports both :width 600 :height 400 :session *R*
+  get_frequency_plot("CHARLES")
+  #+end_src
+
+  #+RESULTS:
+  [[file:pictures/frequency_dylan.png]]
+
+* Establish by gender the most given firstname by year. Analyse the evolution of the most frequent firstname 
+
+  Store in TopFirstNames the frame where we have the most given name
+  by year and gender and its frequency
+
+  #+begin_src R :results output :session *R* :exports both
+FirstNamesClean %>% group_by(annee, sexe) %>%
+    summarize(prenom, nombre, nombre_max = max(nombre), freq=nombre/sum(nombre)*100) %>%
+    filter(nombre == nombre_max) %>%
+    select(-nombre, -nombre_max) -> TopFirstNames
+
+    print(TopFirstNames)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+
+  [1m[22m`summarise()` has grouped output by 'annee', 'sexe'. You can override using the `.groups` argument.
+
+  [38;5;246m# A tibble: 244 × 4[39m
+  [38;5;246m# Groups:   annee, sexe [244][39m
+     annee  sexe prenom   freq
+     [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<chr>[39m[23m   [3m[38;5;246m<dbl>[39m[23m
+  [38;5;250m 1[39m  [4m1[24m900     1 ANDRÉ   0.628
+  [38;5;250m 2[39m  [4m1[24m900     2 MARIE   1.12 
+  [38;5;250m 3[39m  [4m1[24m901     1 MARCEL  0.579
+  [38;5;250m 4[39m  [4m1[24m901     2 MARIE   1.10 
+  [38;5;250m 5[39m  [4m1[24m902     1 GEORGES 0.563
+  [38;5;250m 6[39m  [4m1[24m902     2 MARIE   1.11 
+  [38;5;250m 7[39m  [4m1[24m903     1 ANDRÉ   0.625
+  [38;5;250m 8[39m  [4m1[24m903     2 MARIE   1.12 
+  [38;5;250m 9[39m  [4m1[24m904     1 ANDRÉ   0.637
+  [38;5;250m10[39m  [4m1[24m904     2 MARIE   1.09 
+  [38;5;246m# … with 234 more rows[39m
+  #+end_example
+
+   plot the frequency of the top given name by year and gender
+
+   #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+   TopFirstNames %>% ggplot(aes(x = annee, y = freq, col = factor(sexe))) +
+          scale_x_continuous(name="Année", limits=c(1900,2025), breaks=seq(1900,2025,10))+
+          scale_y_continuous(name="Fréquence (%)") +
+          geom_point() + theme_bw();
+   #+end_src
+
+   #+RESULTS:
+   [[file:/tmp/babel-suSdnP/figureIW8HcK.png]]

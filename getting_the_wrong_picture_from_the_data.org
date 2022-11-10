@@ -83,7 +83,29 @@ ordonées qui sera sur ces valeurs.
 #+begin_src R :results output :session *R* :exports both
   group1 = read.csv("group1.csv", header = T, sep=",")
   group2 = read.csv("group2.csv", header = T, sep=",")
+  summary(group1)
+  summary(group2)
 #+end_src
+
+#+RESULTS:
+#+begin_example
+
+ petite_section  moyenne_section grande_section 
+ Min.   :0.000   Min.   :1.000   Min.   :4.830  
+ 1st Qu.:0.350   1st Qu.:2.570   1st Qu.:6.460  
+ Median :1.110   Median :3.740   Median :7.380  
+ Mean   :1.201   Mean   :4.059   Mean   :7.117  
+ 3rd Qu.:1.720   3rd Qu.:5.240   3rd Qu.:7.630  
+ Max.   :3.470   Max.   :8.000   Max.   :9.000
+
+ petite_section   moyenne_section grande_section 
+ Min.   :0.0000   Min.   :1.560   Min.   :3.830  
+ 1st Qu.:0.6575   1st Qu.:2.595   1st Qu.:5.275  
+ Median :1.2900   Median :4.390   Median :6.755  
+ Mean   :1.2657   Mean   :4.326   Mean   :6.380  
+ 3rd Qu.:1.6600   3rd Qu.:5.957   3rd Qu.:7.230  
+ Max.   :2.8100   Max.   :6.880   Max.   :8.540
+#+end_example
 
 On dispose de points de comparaisons entre les différentes années pour
 chaque élève. 
@@ -114,7 +136,7 @@ le groupe 2 en petite et moyenne section mais c'est l'inverse  en grande section
 #+end_src
 
 #+RESULTS:
-[[file:/tmp/babel-BRCIKf/figureon7JVq.png]]
+[[file:/tmp/babel-6VcmNv/figured5r8hs.png]]
 #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
   barplot(mean_group2, ylab="Score moyen des élèves", ylim= c(0,9))
 #+end_src
