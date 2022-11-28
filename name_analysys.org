@@ -40,8 +40,12 @@ You need to use the _tidyverse_ for this analysis. Unzip the file _dpt2020_txt.z
   Check if your file is the same as in the first analysis (reproducibility)
 
   #+begin_src shell :results output :exports both
-  md5 data/dpt2021.csv
+  md5sum data/dpt2021.csv
   #+end_src
+
+  #+RESULTS:
+  : f18a7d627883a0b248a0d59374f3bab7  data/dpt2021.csv
+
 expected :
 MD5 (dpt2021.csv) = f18a7d627883a0b248a0d59374f3bab7
 
@@ -53,15 +57,25 @@ MD5 (dpt2021.csv) = f18a7d627883a0b248a0d59374f3bab7
    #+end_src
 
    #+RESULTS:
-   : 
-   : [1mindexing[0m [34mdpt2021.csv[0m [-------------------------------------] [32m36.46GB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [============================--------] [32m296.18MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [==============================------] [32m300.43MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [===============================-----] [32m299.73MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [=================================---] [32m298.14MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [==================================--] [32m295.05MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [===================================-] [32m288.87MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [====================================] [32m285.48MB/s[0m, eta: [36m 0s[0m                                                                                                                   [1mRows: [22m[34m3784673[39m [1mColumns: [22m[34m5[39m
-   : [36m──[39m [1mColumn specification[22m [36m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
-   : [1mDelimiter:[22m ";"
-   : [31mchr[39m (3): preusuel, annais, dpt
-   : [32mdbl[39m (2): sexe, nombre
-   : 
-   : [36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
-   : [36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+   #+begin_example
+   ── [1mAttaching packages[22m ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.2 ──
+   [32m✔[39m [34mggplot2[39m 3.3.5     [32m✔[39m [34mpurrr  [39m 0.3.4
+   [32m✔[39m [34mtibble [39m 3.1.6     [32m✔[39m [34mdplyr  [39m 1.0.8
+   [32m✔[39m [34mtidyr  [39m 1.2.0     [32m✔[39m [34mstringr[39m 1.4.0
+   [32m✔[39m [34mreadr  [39m 2.1.3     [32m✔[39m [34mforcats[39m 0.5.2
+   ── [1mConflicts[22m ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+   [31m✖[39m [34mdplyr[39m::[32mfilter()[39m masks [34mstats[39m::filter()
+   [31m✖[39m [34mdplyr[39m::[32mlag()[39m    masks [34mstats[39m::lag()
+
+   [1mindexing[0m [34mdpt2021.csv[0m [-------------------------------------] [32m21.64GB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [================================----] [32m345.55MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [==================================--] [32m340.69MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [===================================-] [32m341.05MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [====================================] [32m340.60MB/s[0m, eta: [36m 0s[0m                                                                                                                   [1mRows: [22m[34m3784673[39m [1mColumns: [22m[34m5[39m
+   [36m──[39m [1mColumn specification[22m [36m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+   [1mDelimiter:[22m ";"
+   [31mchr[39m (3): preusuel, annais, dpt
+   [32mdbl[39m (2): sexe, nombre
+
+   [36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+   [36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+   #+end_example
 
 
 All of these following questions may need a preliminary analysis of the data, feel free to present answers and justifications in your own order and structure your report as it should be for a scientific report.
@@ -90,11 +104,12 @@ data cleaning:
 
  aggregate the data a little bit
  #+begin_src R :results output :session *R* :exports both
-      FirstNamesClean %>% group_by(prenom, annee) %>%
+      FirstNamesClean %>% group_by(prenom, annee, sexe) %>%
       # create a new table where we put the sum of the nombre col for each (prenom, annee) pair
-      summarize(sexe, nombre = sum(nombre)) %>%
+      summarize(nombre = sum(nombre)) %>%  as.data.frame() %>% head()
+ # %>%
       # keep only distinct entries 
-      distinct() -> NamesByYears
+     #  distinct() -> NamesByYears
 
    print(NamesByYears)
   #+end_src
@@ -103,22 +118,15 @@ data cleaning:
   #+begin_example
 
   [1m[22m`summarise()` has grouped output by 'prenom', 'annee'. You can override using the `.groups` argument.
+	    prenom annee sexe nombre
+  1 _PRENOMS_RARES  1900    1   2934
+  2 _PRENOMS_RARES  1900    1   2934
+  3 _PRENOMS_RARES  1900    1   2934
+  4 _PRENOMS_RARES  1900    1   2934
+  5 _PRENOMS_RARES  1900    1   2934
+  6 _PRENOMS_RARES  1900    1   2934
 
-  [38;5;246m# A tibble: 264,540 × 4[39m
-  [38;5;246m# Groups:   prenom, annee [256,083][39m
-     prenom         annee  sexe nombre
-     [3m[38;5;246m<chr>[39m[23m          [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<dbl>[39m[23m  [3m[38;5;246m<dbl>[39m[23m
-  [38;5;250m 1[39m _PRENOMS_RARES  [4m1[24m900     1   [4m2[24m934
-  [38;5;250m 2[39m _PRENOMS_RARES  [4m1[24m900     2   [4m2[24m934
-  [38;5;250m 3[39m _PRENOMS_RARES  [4m1[24m901     1   [4m3[24m094
-  [38;5;250m 4[39m _PRENOMS_RARES  [4m1[24m901     2   [4m3[24m094
-  [38;5;250m 5[39m _PRENOMS_RARES  [4m1[24m902     1   [4m3[24m056
-  [38;5;250m 6[39m _PRENOMS_RARES  [4m1[24m902     2   [4m3[24m056
-  [38;5;250m 7[39m _PRENOMS_RARES  [4m1[24m903     1   [4m3[24m024
-  [38;5;250m 8[39m _PRENOMS_RARES  [4m1[24m903     2   [4m3[24m024
-  [38;5;250m 9[39m _PRENOMS_RARES  [4m1[24m904     1   [4m3[24m223
-  [38;5;250m10[39m _PRENOMS_RARES  [4m1[24m904     2   [4m3[24m223
-  [38;5;246m# … with 264,530 more rows[39m
+  Erreur dans print(NamesByYears) : objet 'NamesByYears' introuvable
   #+end_example
 
  then compute the frequencies of each name 
@@ -260,7 +268,7 @@ FirstNamesClean %>% group_by(annee, sexe) %>%
 
    plot the frequency of the top given name by year and gender
 
-   #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+   #+begin_src R :results output graphics file :file data/frequency_of_top_name_per_year.png :exports both :width 600 :height 400 :session *R*
    TopFirstNames %>% ggplot(aes(x = annee, y = freq, col = factor(sexe))) +
           scale_x_continuous(name="Année", limits=c(1900,2025), breaks=seq(1900,2025,10))+
           scale_y_continuous(name="Fréquence (%)") +
@@ -268,4 +276,4 @@ FirstNamesClean %>% group_by(annee, sexe) %>%
    #+end_src
 
    #+RESULTS:
-   [[file:/tmp/babel-suSdnP/figureIW8HcK.png]]
+   [[file:data/frequency_of_top_name_per_year.png]]

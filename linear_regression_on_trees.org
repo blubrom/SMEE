@@ -1,0 +1,151 @@
+* Retrieval of the data
+  #+begin_src R :results output :session *R* :exports both
+  library(dplyr)
+  library(ggplot2)
+  #+end_src
+
+  #+RESULTS:
+
+  #+begin_src R :results output :session *R* :exports both
+  myData=read.table(file="data/arbres-tot.csv", sep=";", header=TRUE)
+  myData %>% rename(circonference = CIRCONFERENCE..cm.) %>% rename(hauteur = HAUTEUR..m.) -> myData
+  myData %>% select(circonference, hauteur) %>% filter(hauteur != 0) -> treeData
+  head(treeData)
+  #+end_src
+
+  #+RESULTS:
+  : 
+  :   circonference hauteur
+  : 1            60       9
+  : 2            70      10
+  : 3           105      17
+  : 4            90       8
+  : 5            30       4
+  : 6            50       9
+
+* Simple regression
+
+  #+begin_src R :results output :session *R* :exports both
+  circ=treeData$circonference
+  height=treeData$hauteur
+  #+end_src
+
+  #+RESULTS:
+
+  #+begin_src R :results output graphics file :file pictures/circonference_hauteur.png :exports both :width 600 :height 400 :session *R*
+  ggplot(treeData, aes(x=circ, y=height)) + geom_point() + xlab("circ") + ylab("height")
+  #+end_src
+
+  #+RESULTS:
+  [[file:pictures/circonference_hauteur.png]]
+
+  #+begin_src R :results output :session *R* :exports both
+  simple_reg <- lm(height~circ, data=treeData)
+  names(simple_reg)
+  #+end_src
+
+  #+RESULTS:
+  : 
+  :  [1] "coefficients"  "residuals"     "effects"       "rank"         
+  :  [5] "fitted.values" "assign"        "qr"            "df.residual"  
+  :  [9] "xlevels"       "call"          "terms"         "model"
+
+  #+begin_src R :results output :session *R* :exports both
+  anova(simple_reg)
+  #+end_src
+
+  #+RESULTS:
+  : Analysis of Variance Table
+  : 
+  : Response: height
+  :            Df Sum Sq Mean Sq F value    Pr(>F)    
+  : circ        1 1509.9 1509.87  200.14 < 2.2e-16 ***
+  : Residuals 150 1131.6    7.54                      
+  : ---
+  : codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+  #+begin_src R :results output :session *R* :exports both
+  summary(simple_reg)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+
+  Call:
+  lm(formula = height ~ circ, data = treeData)
+
+  Residuals:
+      Min      1Q  Median      3Q     Max 
+  -9.2461 -1.6036 -0.2519  1.0772  9.0056 
+
+  Coefficients:
+	      Estimate Std. Error t value Pr(>|t|)    
+  (Intercept) 2.689630   0.452596   5.943 1.88e-08 ***
+  circ        0.090068   0.006366  14.147  < 2e-16 ***
+  ---
+  codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+  Residual standard error: 2.747 on 150 degrees of freedom
+  Multiple R-squared:  0.5716,	Adjusted R-squared:  0.5687 
+  F-statistic: 200.1 on 1 and 150 DF,  p-value: < 2.2e-16
+  #+end_example
+
+  #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+  ggplot(treeData,aes(x=circ,y=height))+ geom_point()+
+stat_smooth(method="lm",se=FALSE)+ xlab("circ")+
+ylab("height")
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-NUf9m8/figuref9r6SJ.png]]
+
+  #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+  acf(residuals(simple_reg))
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-NUf9m8/figureFLW3Bj.png]]
+
+  #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+  plot(simple_reg,2)
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-NUf9m8/figureO0zrU1.png]]
+
+  #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+  plot(simple_reg$residuals)
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-NUf9m8/figureS5obSl.png]]
+
+  #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+    plot(simple_reg, 3)
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-NUf9m8/figureZQEdAo.png]]
+
+  #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+   plot(simple_reg, 1)
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-NUf9m8/figurehq0VbR.png]]
+
+  #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+  plot(simple_reg, 4)
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-NUf9m8/figureOn9IsO.png]]
+
+  #+begin_src R :results output :session *R* :exports both
+  predict(simple_reg, data.frame(circ=75),interval="prediction")
+  #+end_src
+
+  #+RESULTS:
+  :        fit      lwr      upr
+  : 1 9.444703 3.997282 14.89212
