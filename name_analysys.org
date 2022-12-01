@@ -33,9 +33,6 @@ You need to use the _tidyverse_ for this analysis. Unzip the file _dpt2020_txt.z
    #+end_src
 
    #+RESULTS:
-   : 
-   : essai de l'URL 'https://www.insee.fr/fr/statistiques/fichier/2540004/dpt2021_csv.zip'
-   : downloaded 13.0 MB
 
   Check if your file is the same as in the first analysis (reproducibility)
 
@@ -67,7 +64,7 @@ MD5 (dpt2021.csv) = f18a7d627883a0b248a0d59374f3bab7
    [31m✖[39m [34mdplyr[39m::[32mfilter()[39m masks [34mstats[39m::filter()
    [31m✖[39m [34mdplyr[39m::[32mlag()[39m    masks [34mstats[39m::lag()
 
-   [1mindexing[0m [34mdpt2021.csv[0m [-------------------------------------] [32m21.64GB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [================================----] [32m345.55MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [==================================--] [32m340.69MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [===================================-] [32m341.05MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [====================================] [32m340.60MB/s[0m, eta: [36m 0s[0m                                                                                                                   [1mRows: [22m[34m3784673[39m [1mColumns: [22m[34m5[39m
+   [1mindexing[0m [34mdpt2021.csv[0m [-------------------------------------] [32m24.85GB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [==================------------------] [32m179.92MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [==================------------------] [32m163.26MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [===================-----------------] [32m165.38MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [====================----------------] [32m156.34MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [=====================---------------] [32m155.61MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [======================--------------] [32m162.94MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [=======================-------------] [32m165.36MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [=========================-----------] [32m172.26MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [===========================---------] [32m178.86MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [==============================------] [32m188.79MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [===============================-----] [32m191.02MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [=================================---] [32m198.17MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [==================================--] [32m198.67MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [====================================] [32m200.10MB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mdpt2021.csv[0m [====================================] [32m200.49MB/s[0m, eta: [36m 0s[0m                                                                                                                   [1mRows: [22m[34m3784673[39m [1mColumns: [22m[34m5[39m
    [36m──[39m [1mColumn specification[22m [36m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
    [1mDelimiter:[22m ";"
    [31mchr[39m (3): preusuel, annais, dpt
@@ -106,28 +103,15 @@ data cleaning:
  #+begin_src R :results output :session *R* :exports both
       FirstNamesClean %>% group_by(prenom, annee, sexe) %>%
       # create a new table where we put the sum of the nombre col for each (prenom, annee) pair
-      summarize(nombre = sum(nombre)) %>%  as.data.frame() %>% head()
+      summarize(nombre = sum(nombre)) %>%  as.data.frame() -> NamesByYears
  # %>%
       # keep only distinct entries 
      #  distinct() -> NamesByYears
-
-   print(NamesByYears)
   #+end_src
 
   #+RESULTS:
-  #+begin_example
-
-  [1m[22m`summarise()` has grouped output by 'prenom', 'annee'. You can override using the `.groups` argument.
-	    prenom annee sexe nombre
-  1 _PRENOMS_RARES  1900    1   2934
-  2 _PRENOMS_RARES  1900    1   2934
-  3 _PRENOMS_RARES  1900    1   2934
-  4 _PRENOMS_RARES  1900    1   2934
-  5 _PRENOMS_RARES  1900    1   2934
-  6 _PRENOMS_RARES  1900    1   2934
-
-  Erreur dans print(NamesByYears) : objet 'NamesByYears' introuvable
-  #+end_example
+  : 
+  : [1m[22m`summarise()` has grouped output by 'prenom', 'annee'. You can override using the `.groups` argument.
 
  then compute the frequencies of each name 
  #+begin_src R :results output :session *R* :exports both
@@ -146,22 +130,22 @@ data cleaning:
  #+RESULTS:
  #+begin_example
 
-  [1m[22m`summarise()` has grouped output by 'annee'. You can override using the `.groups` argument.
+ [1m[22m`summarise()` has grouped output by 'annee'. You can override using the `.groups` argument.
 
-  [38;5;246m# A tibble: 264,540 × 5[39m
-     annee prenom          sexe nombre frequence
-     [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<chr>[39m[23m          [3m[38;5;246m<dbl>[39m[23m  [3m[38;5;246m<dbl>[39m[23m     [3m[38;5;246m<dbl>[39m[23m
-  [38;5;250m 1[39m  [4m1[24m900 _PRENOMS_RARES     1   [4m2[24m934  0.607   
-  [38;5;250m 2[39m  [4m1[24m900 _PRENOMS_RARES     2   [4m2[24m934  0.607   
-  [38;5;250m 3[39m  [4m1[24m900 ABEL               1    382  0.079[4m1[24m  
-  [38;5;250m 4[39m  [4m1[24m900 ABRAHAM            1      9  0.001[4m8[24m[4m6[24m 
-  [38;5;250m 5[39m  [4m1[24m900 ACHILLE            1    152  0.031[4m5[24m  
-  [38;5;250m 6[39m  [4m1[24m900 ACHILLES           1      4  0.000[4m8[24m[4m2[24m[4m8[24m
-  [38;5;250m 7[39m  [4m1[24m900 ADAM               1      9  0.001[4m8[24m[4m6[24m 
-  [38;5;250m 8[39m  [4m1[24m900 ADELAIDE           2    143  0.029[4m6[24m  
-  [38;5;250m 9[39m  [4m1[24m900 ADÈLE              2    626  0.130   
-  [38;5;250m10[39m  [4m1[24m900 ADELHEID           2      3  0.000[4m6[24m[4m2[24m[4m1[24m
-  [38;5;246m# … with 264,530 more rows[39m
+ [38;5;246m# A tibble: 264,540 × 5[39m
+    annee prenom          sexe nombre frequence
+    [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<chr>[39m[23m          [3m[38;5;246m<dbl>[39m[23m  [3m[38;5;246m<dbl>[39m[23m     [3m[38;5;246m<dbl>[39m[23m
+ [38;5;250m 1[39m  [4m1[24m900 _PRENOMS_RARES     1   [4m1[24m221  0.310   
+ [38;5;250m 2[39m  [4m1[24m900 _PRENOMS_RARES     2   [4m1[24m713  0.435   
+ [38;5;250m 3[39m  [4m1[24m900 ABEL               1    382  0.097[4m1[24m  
+ [38;5;250m 4[39m  [4m1[24m900 ABRAHAM            1      9  0.002[4m2[24m[4m9[24m 
+ [38;5;250m 5[39m  [4m1[24m900 ACHILLE            1    152  0.038[4m6[24m  
+ [38;5;250m 6[39m  [4m1[24m900 ACHILLES           1      4  0.001[4m0[24m[4m2[24m 
+ [38;5;250m 7[39m  [4m1[24m900 ADAM               1      9  0.002[4m2[24m[4m9[24m 
+ [38;5;250m 8[39m  [4m1[24m900 ADELAIDE           2    143  0.036[4m3[24m  
+ [38;5;250m 9[39m  [4m1[24m900 ADÈLE              2    626  0.159   
+ [38;5;250m10[39m  [4m1[24m900 ADELHEID           2      3  0.000[4m7[24m[4m6[24m[4m3[24m
+ [38;5;246m# … with 264,530 more rows[39m
  #+end_example
 
  #+begin_src R :results output :session *R* :exports both
@@ -176,6 +160,16 @@ data cleaning:
  #+end_src
 
  #+RESULTS:
+
+ #+begin_src R :results output :session *R* :exports both
+NameFrequencies %>% filter(prenom == "YANAEL" | prenom == "YANAËL" | prenom == "YANNAEL" | prenom == "YANAELLE") %>% summarize(total = sum(nombre), min = min(annee), max = max(annee)) %>% str()
+ #+end_src
+
+ #+RESULTS:
+ : tibble [1 × 3] (S3: tbl_df/tbl/data.frame)
+ :  $ total: num 79
+ :  $ min  : num 2000
+ :  $ max  : num 2020
 
 ** different name frequency plots
 
@@ -229,6 +223,13 @@ get_frequency_plot("ACHILLE")
 
   #+RESULTS:
   [[file:pictures/frequency_dylan.png]]
+
+  #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+  get_frequency_plot("YANAËL")
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-iuE875/figuremsPCPz.png]]
 
 * Establish by gender the most given firstname by year. Analyse the evolution of the most frequent firstname 
 
