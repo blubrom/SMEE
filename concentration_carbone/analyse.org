@@ -1,3 +1,5 @@
+#+TITLE: Analyse de la concentration carbonne dans l'atmosphère
+
 #+BEGIN_QUOTE
 1. Réalisez un graphique qui vous montrera une oscillation périodique superposée à une évolution systématique plus lente.
 2. Séparez ces deux phénomènes. Caractérisez l'oscillation
@@ -36,5 +38,190 @@ The data file below contains 10 columns.  Columns 1-4 give the dates
 On peut y voir qu'il va falloir faire attention à la présence de
 valeurs manquantes, qui seront indiquées par la valeur *-99.99*                                                            
 
+* Préparation des données 
+
+  les 54 premières lignes du fichier contiennent des descriptions.
+  De plus, les noms de colonnes sont sur trois lignes (on ne gardera
+  que la première, les suivantes servant juste à ajouter quelques
+  précisions sur les unités par exemple). 
+** Extraction des données
+   #+begin_src python :results value :exports both :session
+with open("data/20221124_0952_monthly_in_situ_co2_mlo.csv") as data:
+  lines = [line.strip() for line in data]
+data_lines = lines[57:]
+header = [[t.strip() for t in lines[54].split(',')]]
+table = [[t.strip() for t in line.split(',')] for line in data_lines]
+table = header + table
+table[:5]
+   #+end_src
+
+   #+RESULTS:
+   |   Yr | Mn |  Date |      Date |    CO2 | seasonally |    fit | seasonally |    CO2 | seasonally |
+   | 1958 | 01 | 21200 | 1958.0411 | -99.99 |     -99.99 | -99.99 |     -99.99 | -99.99 |     -99.99 |
+   | 1958 | 02 | 21231 | 1958.1260 | -99.99 |     -99.99 | -99.99 |     -99.99 | -99.99 |     -99.99 |
+   | 1958 | 03 | 21259 | 1958.2027 | 315.71 |     314.43 | 316.20 |     314.91 | 315.71 |     314.43 |
+   | 1958 | 04 | 21290 | 1958.2877 | 317.45 |     315.16 | 317.30 |     314.99 | 317.45 |     315.16 |
+** Supression des valeurs manquantes
+
+  On a pu voir dans la description des données que les valeurs
+  manquantes sont indiquiées par *-99.99*, nous allons donc enlever les
+  lignes comprenant des valeurs manquantes (et les afficher pour en
+  garder trace)
+
+  #+BEGIN_SRC python :results output :exports both :session
+valid_table = []
+for row in table:
+    missing = any([column == '-99.99' for column in row])
+    if missing:
+        print(row)
+    else:
+        valid_table.append(row)
+  #+END_SRC
+
+  #+RESULTS:
+  #+begin_example
+  ['1958', '01', '21200', '1958.0411', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
+  ['1958', '02', '21231', '1958.1260', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
+  ['1958', '06', '21351', '1958.4548', '-99.99', '-99.99', '317.26', '315.14', '317.26', '315.14']
+  ['1958', '10', '21473', '1958.7890', '-99.99', '-99.99', '312.42', '315.41', '312.42', '315.41']
+  ['1964', '02', '23422', '1964.1257', '-99.99', '-99.99', '320.04', '319.37', '320.04', '319.37']
+  ['1964', '03', '23451', '1964.2049', '-99.99', '-99.99', '320.75', '319.41', '320.75', '319.41']
+  ['1964', '04', '23482', '1964.2896', '-99.99', '-99.99', '321.84', '319.45', '321.84', '319.45']
+  ['2022', '10', '44849', '2022.7890', '415.31', '418.93', '-99.99', '-99.99', '415.31', '418.93']
+  ['2022', '11', '44880', '2022.8740', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
+  ['2022', '12', '44910', '2022.9562', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
+  #+end_example
+
+** Extraction des colonnes utilisées
+
+Nous souhaitons garder les deux premières colonnes afin d'avoir
+l'année et le mois. Les troisème, et quatrième colonnes sont
+redondantes.
+Pour les données de concentration en CO2, on va se contenter de garder
+la cinquième colonne, les colonnes restantes en étant plus ou moins
+dérivées.
+
+#+BEGIN_SRC python :result output :exports both :session
+year = [row[0] for row in valid_table]
+assert year[0] == 'Yr'
+month = [row[1] for row in valid_table]
+assert month[0] == 'Mn'
+del month[0]
+concetration = [row[2] for row in valid_table]
+assert concentration[0] == 'CO2'
+del concentration[0]
+data = list(zip(year, month, concentration))
+print(data[:5])
+#+END_SRC
+
+#+RESULTS:
+
+Regardons les premières et les dernières lignes. Nous insérons ~None~ pour indiquer à org-mode la séparation entre les trois sections du tableau: en-tête, début des données, fin des données.
+#+BEGIN_SRC python :results value :exports both :session
+[('Year', 'Month', 'Concentration'), None] + data[:5] + [None] + data[-5:]
+#+END_SRC
+
+#+RESULTS:
+
+** Vérification des données
+
+Il est toujours prudent de vérifier si les données semblent
+crédibles. 
+Nous savons que les années sont données par 4 chiffres et sont
+comprises entre 1958 et 2022, que les mois sont compris entre 1 et 12
+et que les concentrations sont des nombres positifs.
+#+BEGIN_SRC python :results output :exports both
+for year, month, concentration in data:
+    if len(year) != 4 or not year.isdigit():
+        print("Valeur suspecte dans la colonne 'year': ", (year, month, concentration))
+    if len(month) != 2 or not month.isdigit():
+        print("Valeur suspecte dans la colonne 'month': ", (year, month, concentration))
+    if not concentration.isdigit():
+        print("Valeur suspecte dans la colonne 'concentration': ",(year, month, concentration))
+#+END_SRC
+
+#+RESULTS:
+
+Pas de problème !
+
+** Conversions
+Pour faciliter les traitements suivants, nous remplaçons les colonnes
+Yr et Mn par une colonne avec la date au 15 du mois (c'est le jour
+indiqué comme référence dans la description des données)
+
+#+BEGIN_SRC python :results silent :exports both :session
+import datetime
+converted_data = [(datetime.datetime.strptime(year + ':' + month + ":15" , '%Y:%m:%d').date(),
+                  float(inc))
+                  for year, month, concetration in data]
+#+END_SRC
+
+Regardons de nouveau les premières et les dernières lignes:
+#+BEGIN_SRC python :results value :exports both :session
+str_data = [(str(date), str(concentration)) for date, concentration in converted_data]
+[('date', 'concentration'), None] + str_data[:5] + [None] + str_data[-5:]
+#+END_SRC
+
+#+RESULTS:
+
+** Vérification des dates
+
+Nous faisons encore une vérification: nos dates doivent être séparées
+d'exactement un mois , sauf autour des points manquants.
+
+#+BEGIN_SRC python :results output :exports both :session
+dates = [date for date, _ in converted_data]
+for date1, date2 in zip(dates[:-1], dates[1:]):
+    if date2-date1 != datetime.timedelta(weeks=1):
+        print(f"Il y a {date2-date1} entre {date1} et {date2}")
+#+END_SRC
+
+#+RESULTS:
+: Il y a 14 days, 0:00:00 entre 1989-05-01 et 1989-05-15
+
+** Export des données pour pouvoir les analyser avec R
+
+* Analyse des données
+
+
+    #+begin_src R :results output :session *R* :exports both
+    library(dplyr)
+      #+end_src
+
+      #+RESULTS:
+
+
+      #+begin_src R :results output :session *R* :exports both
+  headers <- read.table("data/20221124_0952_monthly_in_situ_co2_mlo.csv", skip=54,  nrows=3, header=F)
+  print(headers)
+  headers_names <- headers %>% sapply(paste,collapse="_")
+  df = read.csv("data/20221124_0952_monthly_in_situ_co2_mlo.csv", header = F, sep=",", skip=57)
+  names(df) <- headers_names 
+  str(df)
+      #+end_src
+
+      #+RESULTS:
+      #+begin_example
+     Erreur dans scan(file = file, what = what, sep = sep, quote = quote, dec = dec,  : 
+       la ligne 1 n'avait pas 11 éléments
+
+     Erreur dans print(headers) : objet 'headers' introuvable
+
+     Erreur dans lapply(X = X, FUN = FUN, ...) : objet 'headers' introuvable
+
+     Erreur : objet 'headers_names' introuvable
+
+     'data.frame':	780 obs. of  10 variables:
+      $ V1 : int  1958 1958 1958 1958 1958 1958 1958 1958 1958 1958 ...
+      $ V2 : int  1 2 3 4 5 6 7 8 9 10 ...
+      $ V3 : int  21200 21231 21259 21290 21320 21351 21381 21412 21443 21473 ...
+      $ V4 : num  1958 1958 1958 1958 1958 ...
+      $ V5 : num  -100 -100 316 317 318 ...
+      $ V6 : num  -100 -100 314 315 315 ...
+      $ V7 : num  -100 -100 316 317 318 ...
+      $ V8 : num  -100 -100 315 315 315 ...
+      $ V9 : num  -100 -100 316 317 318 ...
+      $ V10: num  -100 -100 314 315 315 ...
+      #+end_example
 
 
