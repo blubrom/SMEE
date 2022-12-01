@@ -92,6 +92,9 @@ for row in table:
   ['2022', '12', '44910', '2022.9562', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
   #+end_example
 
+On voit qu'il manque les deux premiers et derniers mois. Aussi, il
+manque les données pour 3 mois consécutifs en 1964
+
 ** Extraction des colonnes utilisées
 
 Nous souhaitons garder les deux premières colonnes afin d'avoir
@@ -101,17 +104,17 @@ Pour les données de concentration en CO2, on va se contenter de garder
 la cinquième colonne, les colonnes restantes en étant plus ou moins
 dérivées.
 
-#+BEGIN_SRC python :result output :exports both :session
+#+BEGIN_SRC python :result silent :exports both :session
 year = [row[0] for row in valid_table]
 assert year[0] == 'Yr'
+del year[0]
 month = [row[1] for row in valid_table]
 assert month[0] == 'Mn'
 del month[0]
-concetration = [row[2] for row in valid_table]
+concentration = [row[4] for row in valid_table]
 assert concentration[0] == 'CO2'
 del concentration[0]
 data = list(zip(year, month, concentration))
-print(data[:5])
 #+END_SRC
 
 #+RESULTS:
@@ -122,6 +125,19 @@ Regardons les premières et les dernières lignes. Nous insérons ~None~ pour in
 #+END_SRC
 
 #+RESULTS:
+| Year | Month | Concentration |
+|------+-------+---------------|
+| 1958 |    03 |        315.71 |
+| 1958 |    04 |        317.45 |
+| 1958 |    05 |        317.51 |
+| 1958 |    07 |        315.87 |
+| 1958 |    08 |        314.93 |
+|------+-------+---------------|
+| 2022 |    05 |        420.77 |
+| 2022 |    06 |        420.68 |
+| 2022 |    07 |        418.68 |
+| 2022 |    08 |        416.76 |
+| 2022 |    09 |        415.41 |
 
 ** Vérification des données
 
@@ -129,14 +145,16 @@ Il est toujours prudent de vérifier si les données semblent
 crédibles. 
 Nous savons que les années sont données par 4 chiffres et sont
 comprises entre 1958 et 2022, que les mois sont compris entre 1 et 12
-et que les concentrations sont des nombres positifs.
-#+BEGIN_SRC python :results output :exports both
+et que les concentrations sont des nombres positifs, elles devraient
+être comprises entre 300 et 500 d'après la figue qu'on peut trouver
+sur le site du scripps.
+#+BEGIN_SRC python :results output :exports both :session
 for year, month, concentration in data:
-    if len(year) != 4 or not year.isdigit():
+    if len(year) != 4 or not year.isdigit() or not (int(year) >= 1958 and int(year) <= 2022):
         print("Valeur suspecte dans la colonne 'year': ", (year, month, concentration))
-    if len(month) != 2 or not month.isdigit():
+    if len(month) != 2 or not month.isdigit() or not(int(month) >= 1 and int(month) <= 12):
         print("Valeur suspecte dans la colonne 'month': ", (year, month, concentration))
-    if not concentration.isdigit():
+    if float(concentration) < 300.0 or float(concentration) > 500.0:
         print("Valeur suspecte dans la colonne 'concentration': ",(year, month, concentration))
 #+END_SRC
 
@@ -152,8 +170,8 @@ indiqué comme référence dans la description des données)
 #+BEGIN_SRC python :results silent :exports both :session
 import datetime
 converted_data = [(datetime.datetime.strptime(year + ':' + month + ":15" , '%Y:%m:%d').date(),
-                  float(inc))
-                  for year, month, concetration in data]
+                  float(concentration))
+                  for year, month, concentration in data]
 #+END_SRC
 
 Regardons de nouveau les premières et les dernières lignes:
@@ -163,23 +181,54 @@ str_data = [(str(date), str(concentration)) for date, concentration in converted
 #+END_SRC
 
 #+RESULTS:
+|       date | concentration |
+|------------+---------------|
+| 1958-03-15 |        315.71 |
+| 1958-04-15 |        317.45 |
+| 1958-05-15 |        317.51 |
+| 1958-07-15 |        315.87 |
+| 1958-08-15 |        314.93 |
+|------------+---------------|
+| 2022-05-15 |        420.77 |
+| 2022-06-15 |        420.68 |
+| 2022-07-15 |        418.68 |
+| 2022-08-15 |        416.76 |
+| 2022-09-15 |        415.41 |
 
 ** Vérification des dates
 
 Nous faisons encore une vérification: nos dates doivent être séparées
-d'exactement un mois , sauf autour des points manquants.
+d'exactement un mois, sauf autour des points manquants.
+Pour vérifier cela, nous vérifions que la différence entre les dates
+est contenue entre 28 et 31 jours, ce qui est la longueur d'un mois.
 
 #+BEGIN_SRC python :results output :exports both :session
 dates = [date for date, _ in converted_data]
+def diff_month(d1, d2):
+    return (d1.year - d2.year) * 12 + d1.month - d2.month
 for date1, date2 in zip(dates[:-1], dates[1:]):
-    if date2-date1 != datetime.timedelta(weeks=1):
+    if date2-date1 < datetime.timedelta(days=28) or date2-date1 > datetime.timedelta(days=31):
         print(f"Il y a {date2-date1} entre {date1} et {date2}")
 #+END_SRC
 
 #+RESULTS:
-: Il y a 14 days, 0:00:00 entre 1989-05-01 et 1989-05-15
+: Il y a 61 days, 0:00:00 entre 1958-05-15 et 1958-07-15
+: Il y a 61 days, 0:00:00 entre 1958-09-15 et 1958-11-15
+: Il y a 121 days, 0:00:00 entre 1964-01-15 et 1964-05-15
+
+On ne trouve pas de dates incohérentes autres que pour les endroits où
+des donéees sont manquantes.
 
 ** Export des données pour pouvoir les analyser avec R
+
+   #+begin_src python :results silent :exports both :session
+with open("data/clean_data.csv", "w") as out:    
+  out.write("date, concentration\n")
+  for d,c in converted_data:
+    out.write(f"{d},{c}\n")
+   #+end_src
+
+   #+RESULTS:
 
 * Analyse des données
 
@@ -189,39 +238,37 @@ for date1, date2 in zip(dates[:-1], dates[1:]):
       #+end_src
 
       #+RESULTS:
+      #+begin_example
+
+      Attachement du package : ‘dplyr’
+
+      Les objets suivants sont masqués depuis ‘package:stats’:
+
+	  filter, lag
+
+      Les objets suivants sont masqués depuis ‘package:base’:
+
+	  intersect, setdiff, setequal, union
+      #+end_example
 
 
       #+begin_src R :results output :session *R* :exports both
-  headers <- read.table("data/20221124_0952_monthly_in_situ_co2_mlo.csv", skip=54,  nrows=3, header=F)
-  print(headers)
-  headers_names <- headers %>% sapply(paste,collapse="_")
-  df = read.csv("data/20221124_0952_monthly_in_situ_co2_mlo.csv", header = F, sep=",", skip=57)
-  names(df) <- headers_names 
-  str(df)
+df <- read.csv("data/clean_data.csv", sep=',', header=T)
+head(df %>% as_tibble())
       #+end_src
 
       #+RESULTS:
       #+begin_example
-     Erreur dans scan(file = file, what = what, sep = sep, quote = quote, dec = dec,  : 
-       la ligne 1 n'avait pas 11 éléments
 
-     Erreur dans print(headers) : objet 'headers' introuvable
-
-     Erreur dans lapply(X = X, FUN = FUN, ...) : objet 'headers' introuvable
-
-     Erreur : objet 'headers_names' introuvable
-
-     'data.frame':	780 obs. of  10 variables:
-      $ V1 : int  1958 1958 1958 1958 1958 1958 1958 1958 1958 1958 ...
-      $ V2 : int  1 2 3 4 5 6 7 8 9 10 ...
-      $ V3 : int  21200 21231 21259 21290 21320 21351 21381 21412 21443 21473 ...
-      $ V4 : num  1958 1958 1958 1958 1958 ...
-      $ V5 : num  -100 -100 316 317 318 ...
-      $ V6 : num  -100 -100 314 315 315 ...
-      $ V7 : num  -100 -100 316 317 318 ...
-      $ V8 : num  -100 -100 315 315 315 ...
-      $ V9 : num  -100 -100 316 317 318 ...
-      $ V10: num  -100 -100 314 315 315 ...
+      # A tibble: 6 × 2
+	date       concentration
+	<chr>              <dbl>
+      1 1958-03-15          316.
+      2 1958-04-15          317.
+      3 1958-05-15          318.
+      4 1958-07-15          316.
+      5 1958-08-15          315.
+      6 1958-09-15          313.
       #+end_example
 
 
