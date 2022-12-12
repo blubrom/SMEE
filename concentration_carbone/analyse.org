@@ -61,14 +61,16 @@ table[:5]
    | 1958 | 02 | 21231 | 1958.1260 | -99.99 |     -99.99 | -99.99 |     -99.99 | -99.99 |     -99.99 |
    | 1958 | 03 | 21259 | 1958.2027 | 315.71 |     314.43 | 316.20 |     314.91 | 315.71 |     314.43 |
    | 1958 | 04 | 21290 | 1958.2877 | 317.45 |     315.16 | 317.30 |     314.99 | 317.45 |     315.16 |
+
+
 ** Supression des valeurs manquantes
 
-  On a pu voir dans la description des données que les valeurs
-  manquantes sont indiquiées par *-99.99*, nous allons donc enlever les
-  lignes comprenant des valeurs manquantes (et les afficher pour en
-  garder trace)
+   On a pu voir dans la description des données que les valeurs
+   manquantes sont indiquiées par *-99.99*, nous allons donc enlever les
+   lignes comprenant des valeurs manquantes (et les afficher pour en
+   garder trace)
 
-  #+BEGIN_SRC python :results output :exports both :session
+   #+BEGIN_SRC python :results output :exports both :session
 valid_table = []
 for row in table:
     missing = any([column == '-99.99' for column in row])
@@ -76,24 +78,24 @@ for row in table:
         print(row)
     else:
         valid_table.append(row)
-  #+END_SRC
+   #+END_SRC
 
-  #+RESULTS:
-  #+begin_example
-  ['1958', '01', '21200', '1958.0411', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
-  ['1958', '02', '21231', '1958.1260', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
-  ['1958', '06', '21351', '1958.4548', '-99.99', '-99.99', '317.26', '315.14', '317.26', '315.14']
-  ['1958', '10', '21473', '1958.7890', '-99.99', '-99.99', '312.42', '315.41', '312.42', '315.41']
-  ['1964', '02', '23422', '1964.1257', '-99.99', '-99.99', '320.04', '319.37', '320.04', '319.37']
-  ['1964', '03', '23451', '1964.2049', '-99.99', '-99.99', '320.75', '319.41', '320.75', '319.41']
-  ['1964', '04', '23482', '1964.2896', '-99.99', '-99.99', '321.84', '319.45', '321.84', '319.45']
-  ['2022', '10', '44849', '2022.7890', '415.31', '418.93', '-99.99', '-99.99', '415.31', '418.93']
-  ['2022', '11', '44880', '2022.8740', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
-  ['2022', '12', '44910', '2022.9562', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
-  #+end_example
+   #+RESULTS:
+   #+begin_example
+   ['1958', '01', '21200', '1958.0411', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
+   ['1958', '02', '21231', '1958.1260', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
+   ['1958', '06', '21351', '1958.4548', '-99.99', '-99.99', '317.26', '315.14', '317.26', '315.14']
+   ['1958', '10', '21473', '1958.7890', '-99.99', '-99.99', '312.42', '315.41', '312.42', '315.41']
+   ['1964', '02', '23422', '1964.1257', '-99.99', '-99.99', '320.04', '319.37', '320.04', '319.37']
+   ['1964', '03', '23451', '1964.2049', '-99.99', '-99.99', '320.75', '319.41', '320.75', '319.41']
+   ['1964', '04', '23482', '1964.2896', '-99.99', '-99.99', '321.84', '319.45', '321.84', '319.45']
+   ['2022', '10', '44849', '2022.7890', '415.31', '418.93', '-99.99', '-99.99', '415.31', '418.93']
+   ['2022', '11', '44880', '2022.8740', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
+   ['2022', '12', '44910', '2022.9562', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99', '-99.99']
+   #+end_example
 
-On voit qu'il manque les deux premiers et derniers mois. Aussi, il
-manque les données pour 3 mois consécutifs en 1964
+ On voit qu'il manque les deux premiers et derniers mois. Aussi, il
+ manque les données pour 3 mois consécutifs en 1964
 
 ** Extraction des colonnes utilisées
 
@@ -232,43 +234,285 @@ with open("data/clean_data.csv", "w") as out:
 
 * Analyse des données
 
+** préparation de l'analyse
+
+     #+begin_src R :results output :session *R* :exports both
+    library(dplyr)
+    library(ggplot2)
+       #+end_src
+
+       #+RESULTS:
+
+
+       #+begin_src R :results output :session *R* :exports both
+df <- read.csv("data/clean_data.csv", sep=',', header=T)
+df$date <- as.Date(df$date)
+df <- df %>% as_tibble()
+head(df) 
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+
+       # A tibble: 6 × 2
+	 date       concentration
+	 <date>             <dbl>
+       1 1958-03-15          316.
+       2 1958-04-15          317.
+       3 1958-05-15          318.
+       4 1958-07-15          316.
+       5 1958-08-15          315.
+       6 1958-09-15          313.
+       #+end_example
+
+** Affichage de l'évolution de la concentration avec le temps
+ Après avoir récuppéré les données, et indiqué à R que la colonne date
+ contient des dates, on peut afficher l'évolution de la concentration
+ carbonne dans l'atmosphère en fonction du temps 
+
+       #+begin_src R :results output graphics file :file concentration_over_time.png :exports both :width 600 :height 400 :session *R*
+      df %>% ggplot(aes(date,concentration)) + geom_line() + ylab("CO2 concentration (ppm)") + theme_bw()
+       #+end_src
+
+       #+RESULTS:
+       [[file:concentration_over_time.png]]
+ On peut voir sur ce graphique une hausse tendancielle de la
+ concentration en CO2 dans l'atmosphère dans le temps. On peut aussi
+ voir des variations saisonnières.
+
+** Étude des oscillacions périodiques
+
+ Afin d'avoir une un peu meilleure idée de la période d'oscillation, on
+ peut se concentrer sur les 24 dernières mesures
+
+       #+begin_src R :results output graphics file :file variations_2021-22.png :exports both :width 600 :height 400 :session *R*
+      df %>% tail(n=24) %>% ggplot(aes(date, concentration)) + geom_point() + geom_line() + ylab("CO2 concentration (ppm)")
+       #+end_src
+
+       #+RESULTS:
+       [[file:variations_2021-22.png]]
+ On peut voir que la période semble être d'environ 1 an avec une
+ montée qui dure pendant 7 mois et une redescente les 5 derniers mois
+ avec un début commençant vers septembre / octobre.
+
+** Étude de la hausse tendancielle
+
+ Comme on l'a décrit plus haut, on peut décomposer l'évolution de la
+ concentration CO2 en une oscillation périodique avec une période d'un
+ an ainsi qu'une hausse tendancielle. Pour étudier cette hausse
+ tendancielle, on va étduier une version lissée de la courbe avec une
+ moyenne glissante sur un an. Ainsi les oscillations périodiques se
+ veront compensées et ne subsistera que la hausse tendancielle.
+
+
+*** Modélisation du phénomène
+
+
+  #+begin_src R :results silent :session *R* :exports both
+df %>% mutate(days = as.numeric(difftime(date, date[1], units="days"))) -> df
+  #+end_src
+
+  #+RESULTS:
+
+  On va essayer de modéliser la concentration comme un polynome de
+  degré 2 en fonction de la date avec une composante en sin et en cos
+  pour gérer les variations saisonières (avec une période de 1 an soit
+  365 jours) soit
+  concentration = a * date^2 + b*date + c + d*sin(2*pi*dates/365) + e*cos(2*pi*dates/365) 
+
+  #+begin_src R :results output :session *R* :exports both
+reg3 <- lm(concentration ~ I(days^2) + days + I(sin(2*pi*days/365)) + I(cos(2*pi*days/365)), data=df)
+summary(reg3)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+
+ Call:
+ lm(formula = concentration ~ I(days^2) + days + I(sin(2 * pi * 
+     days/365)) + I(cos(2 * pi * days/365)), data = df)
+
+ Residuals:
+      Min       1Q   Median       3Q      Max 
+ -2.57077 -0.66756 -0.02117  0.63627  2.55581 
+
+ Coefficients:
+			    Estimate Std. Error t value Pr(>|t|)    
+ (Intercept)               3.147e+02  1.025e-01 3070.60   <2e-16 ***
+ I(days^2)                 1.002e-07  8.173e-10  122.63   <2e-16 ***
+ days                      2.039e-03  1.996e-05  102.13   <2e-16 ***
+ I(sin(2 * pi * days/365)) 2.051e+00  4.778e-02   42.94   <2e-16 ***
+ I(cos(2 * pi * days/365)) 1.994e+00  4.759e-02   41.90   <2e-16 ***
+ ---
+ codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+ Residual standard error: 0.9356 on 765 degrees of freedom
+ Multiple R-squared:  0.9991,	Adjusted R-squared:  0.999 
+ F-statistic: 2.012e+05 on 4 and 765 DF,  p-value: < 2.2e-16
+  #+end_example
+ On obtient donc le modèle suivant: concentration =  1.002e-07  *
+ date^2 + 2.039e-3 *date + 3.147e+02 +  2.051*sin(2*pi*dates/365) +
+ 1.994*cos(2*pi*dates/365) + erreur résiduelle
+
+  #+begin_src R :results output graphics file :file residuals_analysis_first_regression.png :exports both :width 600 :height 400 :session *R*
+par(mfcol=c(2,2))
+plot(reg3)
+  #+end_src
+
+  #+RESULTS:
+  [[file:residuals_analysis_first_regression.png]]
+
+  #+begin_src R :results output :session *R* :exports both
+ regression = function(date){
+  return (1.002e-07  * date ^ 2 + 2.039e-03 *date + 3.147e+02 +  2.051*sin(2*pi*date/365) + 1.994*cos(2*pi*date/365))
+}
+regression(45)
+  #+end_src
+
+  #+RESULTS:
+  : 
+  : [1] 317.6516
+
+ On peut voir que les résidus ont de bonnes propriétés donc notre
+ modèle semble adapté. On peut dessiner le graphe suivant afin de
+ comparer visuellement notre modèle aux données originelles
+
+ #+begin_src R :results output :session *R* :exports both
+  df %>% mutate(regression = concentration + reg3$residuals) %>% select(-days) %>% pivot_longer(!date) ->  long_plot_data
+  head(long_plot_data)
+ #+end_src
+
+ #+RESULTS:
+ #+begin_example
+
+# A tibble: 6 × 3
+  date       name          value
+  <date>     <chr>         <dbl>
+1 1958-03-15 concentration  316.
+2 1958-03-15 regression     315.
+3 1958-04-15 concentration  317.
+4 1958-04-15 regression     317.
+5 1958-05-15 concentration  318.
+6 1958-05-15 regression     317.
+ #+end_example
+
+  #+begin_src R :results output graphics file :file regression_vs_data.png :exports both :width 600 :height 400 :session *R*
+ long_plot_data %>% ggplot(aes(x = date, y=value)) + geom_line(aes(color=name)) + theme_bw()
+  #+end_src
+
+  #+RESULTS:
+  [[file:regression_vs_data.png]]
+
+
+ On peut voir que la régression est très proche de la courbe réelle.
+
+*** Prédiction de valeurs futures
+
+On peut se servir de cette régression pour essayer de prédire les
+futures valeurs de concentration dans l'atmosphère.
+
+#+begin_src R :results silent :session *R* :exports both
+future_days <- as.data.frame(seq(from = max(df$days) + 30, to = max(df$days) + 1000, by = 30))
+colnames(future_days) <- "days"
+future_predictions <- predict(reg3, newdata=future_days, interval="confidence")
+#+end_src
+
+#+RESULTS:
+
+#+begin_src R :results silent :session *R* :exports both
+library(tidyr)
+#+end_src
+
+#+RESULTS:
+
+ajouter les nouvelles donées au précédentes pour pouvoir les afficher
+sur une seule figure
+#+begin_src R :results output :session *R* :exports both
+future <- data.frame(future_days, future_predictions)
+bind_rows(df, future) %>% mutate(date = date[1] + days) -> df
+df %>% select(-days) %>% pivot_longer(!date,names_to="type", values_to="value", values_drop_na = T) -> long_data
+#+end_src
+
+#+RESULTS:
+
+Ce graphique montre les prédictions qu'effectue notre modèle pour les
+prochaines années 
+#+begin_src R :results output graphics file :file prediction.png :exports both :width 600 :height 400 :session *R*
+long_data %>% tail(n=200) %>% ggplot(aes(x = date, y = value)) + geom_line(aes(col=type)) + theme_bw()
+#+end_src
+
+#+RESULTS:
+[[file:prediction.png]]
+
+
+
+
+** essai d'analyse du signal pour extraire la période
+
+On peut essayer de refaire la même analyse mais en extrayant plus
+précisément la fréquence d'oscillation périodique.
+
+On va enlever la tendance en la modélisant par un polynome de degré 2
+en le nombre de jours écoulés depuis la première mesure.
+    #+begin_src R :results output :session *R* :exports both
+    reg <- lm(concentration ~ I(days^2) + days, data = df)
+    residuals <- reg$residuals
+    summary(residuals)
+    #+end_src
+
+    #+RESULTS:
+    : 
+    :     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    : -4.93163 -1.79007  0.09904  0.00000  1.81703  5.00934
+
+Il nous reste ensuite à analyser les résidus pour extraire la
+fréquence de la variation saisonière.
+
+Pour obtenir la fréquence d'échantillonage en jours^-1, on divise le nombre de mesures réalisées par le nombre de jours écoulés
+entre la première et la dernière mesure. 
+Ensuite, on calcule la FFT des résidus et on en extrait les fréquences
+ainsi que les amplitudes, la fréquence de variation est obtenue au
+maximum 
 
     #+begin_src R :results output :session *R* :exports both
-    library(dplyr)
-      #+end_src
+sampling_rate <- nrow(df) / max(df$days)
+transform <- fft(residuals)
+data.frame(residuals, transform) -> residuals_frame
+residuals_frame$indices <- as.integer(rownames(residuals_frame)) - 1
+residuals_frame %>% mutate(frequencies = indices / nrow(residuals_frame) * sampling_rate) %>% mutate(magnitudes = Mod(transform)) %>% select(frequencies, magnitudes) -> signal_info
+head(signal_info)
+max_magnitude <- max(signal_info$magnitudes)
+signal_info %>% filter(magnitudes == max_magnitude) %>% mutate(period = 1 / frequencies) -> s
+print(s)
+freq <- s$frequencies[1]
+    #+end_src
 
-      #+RESULTS:
-      #+begin_example
+    #+RESULTS:
+    #+begin_example
 
-      Attachement du package : ‘dplyr’
+       frequencies   magnitudes
+    1 0.000000e+00 1.421085e-14
+    2 4.244482e-05 1.038591e+02
+    3 8.488964e-05 2.667872e+02
+    4 1.273345e-04 5.589705e+01
+    5 1.697793e-04 1.176273e+02
+    6 2.122241e-04 9.930946e+00
 
-      Les objets suivants sont masqués depuis ‘package:stats’:
+	frequencies magnitudes   period
+    65  0.002716469   910.1418 368.1250
+    707 0.029966044   910.1418  33.3711
+    #+end_example
 
-	  filter, lag
+    On obtient une période d'oscillation de 368.125 jours pour une
+    fréquence de 0.00271865 (ainsi qu'un
+    deuxième pic que je n'explique pas du tout, la figure semble
+    vraiment reproduite par symmétrie axiale)
 
-      Les objets suivants sont masqués depuis ‘package:base’:
+    #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+    signal_info %>% ggplot(aes(x = frequencies, y = magnitudes)) + geom_point()
+    #+end_src
 
-	  intersect, setdiff, setequal, union
-      #+end_example
+    #+RESULTS:
+    [[file:/tmp/babel-HkGFQV/figurecutEkK.png]]
 
-
-      #+begin_src R :results output :session *R* :exports both
-df <- read.csv("data/clean_data.csv", sep=',', header=T)
-head(df %>% as_tibble())
-      #+end_src
-
-      #+RESULTS:
-      #+begin_example
-
-      # A tibble: 6 × 2
-	date       concentration
-	<chr>              <dbl>
-      1 1958-03-15          316.
-      2 1958-04-15          317.
-      3 1958-05-15          318.
-      4 1958-07-15          316.
-      5 1958-08-15          315.
-      6 1958-09-15          313.
-      #+end_example
-
-
+Ces résultats confirment le fait que l'oscillation est bien anuelle.

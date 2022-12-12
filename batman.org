@@ -1,0 +1,372 @@
+#+title: TP : is Batman somewhere?
+
+* Presentation 
+
+  #+begin_src R :results output :session *R* :exports both
+library(dplyr)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+
+  Attachement du package : ‘dplyr’
+
+  Les objets suivants sont masqués depuis ‘package:stats’:
+
+      filter, lag
+
+  Les objets suivants sont masqués depuis ‘package:base’:
+
+      intersect, setdiff, setequal, union
+  #+end_example
+
+  #+begin_src R :results output :session *R* :exports both
+  myData <- read.table(file="data/bats.csv", sep=";", skip=3, header=T)
+  names(myData)
+  #+end_src
+
+  #+RESULTS:
+  : 
+  : [1] "Species" "Diet"    "Clade"   "BOW"     "BRW"     "AUD"     "MOB"    
+  : [8] "HIP"
+
+* Study of the relationship between brain weight and body mass
+
+We analyse only plant eating bats:
+
+#+begin_src R :results output :session *R* :exports both
+phyto=myData[(myData$Diet==1),]
+reg1 = lm(BRW ~ BOW, data=phyto)
+summary(reg1)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+Call:
+lm(formula = BRW ~ BOW, data = phyto)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-628.32 -233.94  -65.74  158.26 1308.59 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 623.4469    81.4762   7.652 3.14e-08 ***
+BOW           8.9999     0.3972  22.659  < 2e-16 ***
+---
+codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 396.9 on 27 degrees of freedom
+Multiple R-squared:   0.95,	Adjusted R-squared:  0.9482 
+F-statistic: 513.4 on 1 and 27 DF,  p-value: < 2.2e-16
+#+end_example
+
+we see that BOW has a really significant impact on BRW.
+
+** What is the estimate of the intercept? What is the value of the test statistics for the model test? What is the H0 hypothesis of this test? What can be sait about the relationship between brain weight and body mass? How much is the coefficient of determination?
+
+| estimate of the Intercept        |                                                  623 |
+| Value of the test statistics     |                                                513.4 |
+| H0 hypothesis                    |                          BOW has no influence on BRW |
+| relationship between BRW and BOW | BOW has a statistically significant influance on BRW |
+| coefficient of determination     |                                                    9 |
+
+
+#+begin_src R :results output :session *R* :exports both
+anova(reg1)
+#+end_src
+
+#+RESULTS:
+: Analysis of Variance Table
+: 
+: Response: BRW
+:           Df   Sum Sq  Mean Sq F value    Pr(>F)    
+: BOW        1 80888380 80888380  513.42 < 2.2e-16 ***
+: Residuals 27  4253838   157550                      
+: ---
+: codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+| additional information presented | part of the variance explained by the model and part not explained |
+| Sum of the residual squares      |                                                            4253838 |
+
+#+begin_src R :results output graphics file :file pictures/bats_residuals_predicted_reg1.png :exports both :width 600 :height 400 :session *R*
+plot(reg1$fitted.values, reg1$residuals, xlab="Predicted", ylab="Residuals")
+#+end_src
+
+#+RESULTS:
+[[file:pictures/bats_residuals_predicted_reg1.png]]
+
+On voit une chauve souris trop grosse pour être réaliste, on va
+essayer de l'enlever pour ne garder que les points cohérents
+
+#+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+plot(reg1,4)
+#+end_src
+
+#+RESULTS:
+[[file:/tmp/babel-nBWI3m/figure6ap6NJ.png]]
+
+#+begin_src R :results output :session *R* :exports both
+which(phyto$BRW>8000)
+#+end_src
+
+#+RESULTS:
+: [1] 7
+
+Le plot de la distance de Cook indique que le point numéro 7 est le
+plus probable "outlier", on peut voir que c'est le point avec un
+cerveau bien trop gros par rapport à ce qu'on attend
+
+#+begin_src R :results output :session *R* :exports both
+phytobis=phyto[which(phyto$BRW<8000),]
+reg2=lm(BRW~BOW, data=phytobis)
+summary(reg2)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+Call:
+lm(formula = BRW ~ BOW, data = phytobis)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-269.76  -93.33    8.73  112.93  322.55 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 346.5452    35.4920   9.764 3.48e-10 ***
+BOW          14.5099     0.4285  33.860  < 2e-16 ***
+---
+codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 141.8 on 26 degrees of freedom
+Multiple R-squared:  0.9778,	Adjusted R-squared:  0.977 
+F-statistic:  1147 on 1 and 26 DF,  p-value: < 2.2e-16
+#+end_example
+
+
+| Intercept estimate           |  346 |
+| coefficient of determination | 14.5 |
+| test statistics              | 1147 |
+
+#+begin_src R :results output graphics file :file pictures/data_reg1.png :exports both :width 600 :height 400 :session *R*
+par(mfcol=c(2,2))
+plot(reg1)
+#+end_src
+
+#+RESULTS:
+[[file:pictures/data_reg1.png]]
+#+begin_src R :results output graphics file :file pictures/data_reg2.png :exports both :width 600 :height 400 :session *R*
+par(mfcol=c(2,2))
+plot(reg2)
+#+end_src
+
+#+RESULTS:
+[[file:pictures/data_reg2.png]]
+On peut voir que la deuxième regression est bien meilleure que la
+première car les résiduts sont bien plus petits et proche d'une ligne
+droite
+
+* Study of the contribution to the total weight of each part of the brain
+
+  #+begin_src R :results output :session *R* :exports both
+  library(corrplot)
+  phytoNum <- phyto %>% select(BRW, AUD, MOB, HIP)
+  mat.cor=cor(phytoNum)
+  #+end_src
+
+  #+RESULTS:
+  : corrplot 0.92 loaded
+
+  #+begin_src R :results output graphics file :file pictures/bats_correlation_plot.png  :exports both :width 600 :height 400 :session *R*
+  corrplot(mat.cor, type="upper")
+  #+end_src
+
+  #+RESULTS:
+  [[file:pictures/bats_correlation_plot.png]]
+
+  #+begin_src R :results output :session *R* :exports both
+  cor.test(phyto$BRW, phyto$HIP)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+
+	  Pearson's product-moment correlation
+
+  data:  phyto$BRW and phyto$HIP
+  t = 12.91, df = 27, p-value = 4.574e-13
+  alternative hypothesis: true correlation is not equal to 0
+  95 percent confidence interval:
+   0.8502663 0.9658107
+  sample estimates:
+	cor 
+  0.9276811
+  #+end_example
+
+  #+begin_src R :results output :session *R* :exports both
+  cor.test(phyto$BRW, phyto$MOB)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+
+	  Pearson's product-moment correlation
+
+  data:  phyto$BRW and phyto$MOB
+  t = 9.7964, df = 27, p-value = 2.203e-10
+  alternative hypothesis: true correlation is not equal to 0
+  95 percent confidence interval:
+   0.7644185 0.9442114
+  sample estimates:
+	cor 
+  0.8834215
+  #+end_example
+
+  #+begin_src R :results output :session *R* :exports both
+  cor.test(phyto$BRW, phyto$AUD)
+  #+end_src
+
+  #+RESULTS:
+  #+begin_example
+
+	  Pearson's product-moment correlation
+
+  data:  phyto$BRW and phyto$AUD
+  t = 3.2338, df = 27, p-value = 0.003215
+  alternative hypothesis: true correlation is not equal to 0
+  95 percent confidence interval:
+   0.2007495 0.7497021
+  sample estimates:
+	cor 
+  0.5283792
+  #+end_example
+
+All the tests have a low p-value therefore the is a corelation between
+BRW and HIP, MOB, AUD. The correlation we are least sure of is between
+BRW and AUD.
+
+#+begin_src R :results output :session *R* :exports both
+regm=lm(BRW~AUD+MOB+HIP, data = phytobis)
+summary(regm)
+anova(regm)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+Call:
+lm(formula = BRW ~ AUD + MOB + HIP, data = phytobis)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-268.55  -68.84    9.88   61.66  375.34 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -312.692     76.628  -4.081  0.00043 ***
+AUD           47.989      6.067   7.910 3.85e-08 ***
+MOB           -2.444      3.257  -0.750  0.46034    
+HIP           15.981      2.960   5.399 1.52e-05 ***
+---
+codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 158.5 on 24 degrees of freedom
+Multiple R-squared:  0.9744,	Adjusted R-squared:  0.9712 
+F-statistic: 304.5 on 3 and 24 DF,  p-value: < 2.2e-16
+
+Analysis of Variance Table
+
+Response: BRW
+          Df   Sum Sq  Mean Sq F value    Pr(>F)    
+AUD        1  6817133  6817133 271.210 1.397e-14 ***
+MOB        1 15409397 15409397 613.040 < 2.2e-16 ***
+HIP        1   732653   732653  29.148 1.519e-05 ***
+Residuals 24   603265    25136                      
+---
+codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#+end_example
+
+#+begin_src R :results output :session *R* :exports both
+reg0 = lm(BRW ~ 1, data=phytobis)
+step(reg0, scope=BRW~AUD + MOB + HIP, direction="forward")
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+Start:  AIC=384
+BRW ~ 1
+
+       Df Sum of Sq      RSS    AIC
+
+HIP   1  21373972  2188475 319.46
+
+MOB   1  20539668  3022780 328.51
+
+AUD   1   6817133 16745314 376.44
+<none>              23562448 384.00
+
+Step:  AIC=319.46
+BRW ~ HIP
+
+       Df Sum of Sq     RSS    AIC
+
+AUD   1   1571059  617417 286.03
+<none>              2188475 319.46
+
+MOB   1     12335 2176140 321.30
+
+Step:  AIC=286.03
+BRW ~ HIP + AUD
+
+       Df Sum of Sq    RSS    AIC
+<none>              617417 286.03
+
+MOB   1     14152 603265 287.38
+
+Call:
+lm(formula = BRW ~ HIP + AUD, data = phytobis)
+
+Coefficients:
+(Intercept)          HIP          AUD  
+    -277.68        13.80        47.96
+#+end_example
+
+La conclusion est que le meilleur modèle est BRW = -277 + 13.8*HIP +
+47.96*AUD
+
+* Link between volume of the auditory part and diet
+
+  #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+  myData$Diet_F = as.factor(myData$Diet)
+  with(myData, plot(AUD~Diet))
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-nBWI3m/figureEEyNnr.png]]
+  #+begin_src R :results output graphics file :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session *R*
+  with(myData, plot(AUD~Diet_F))
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-nBWI3m/figureBqhFr2.png]]
+Le deuxième plot donne un résumé de la répartition des AUD pour chaque DIET  
+
+#+begin_src R :results output :session *R* :exports both
+  lm = lm(AUD~Diet_F, data=myData)
+  anova(lm)
+  #+end_src
+
+  #+RESULTS:
+  : 
+  : Analysis of Variance Table
+  : 
+  : Response: AUD
+  :           Df  Sum Sq Mean Sq F value Pr(>F)
+  : Diet_F     3   66.07  22.023  0.9293 0.4323
+  : Residuals 59 1398.26  23.699
+
+Le Diet tout seul n'explique pas la variabilité du AUD
